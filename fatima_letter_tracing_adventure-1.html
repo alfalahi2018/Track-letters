@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fatima the Beautiful's Letter Adventure!</title>
+<style>
+:root{--ink:#493b78;--pink:#ff8ab5;--yellow:#ffd65a;--mint:#8ce6ce;--blue:#a8d9ff;--purple:#c9b4ff}
+*{box-sizing:border-box}body{margin:0;font-family:"Trebuchet MS",Arial,sans-serif;color:var(--ink);background:linear-gradient(135deg,#fff0f7,#effaff 55%,#fff9df);min-height:100vh}
+header{text-align:center;padding:16px 12px 8px}h1{margin:4px;font-size:clamp(1.7rem,4vw,2.8rem);color:#e95091;text-shadow:2px 2px #fff}header p{margin:5px;font-weight:700}
+.app{max-width:1000px;margin:auto;padding:10px 14px 26px}.top{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;margin:8px 0 14px}
+.pill,.btn{border:0;border-radius:999px;padding:10px 16px;font-size:1rem;font-weight:800;box-shadow:0 4px 0 #d8c8eb;cursor:pointer;color:#493b78;background:white}.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d8c8eb}.pink{background:#ffacd0}.yellow{background:#ffe27b}.mint{background:#a8f0d9}.blue{background:#bfe4ff}
+.panel{background:#ffffffd9;border:3px solid white;border-radius:26px;padding:16px;box-shadow:0 8px 22px #8e7bb51c}
+.hero{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin-bottom:14px}.mascot{font-size:5.5rem;text-align:center;filter:drop-shadow(0 5px 0 #ffe4f0)}.letterTitle{font-size:1.15rem;font-weight:800}.bigletter{font-size:3.4rem;line-height:1;color:#e95091;font-weight:900}.instruction{font-size:1.05rem;line-height:1.45}
+.canvaswrap{position:relative;border-radius:20px;overflow:hidden;background:#fffdfb;border:2px solid #f6d8eb}
+canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}.status{text-align:center;font-weight:800;min-height:30px;margin:10px 0 0;color:#6a55a5}
+.lettergrid{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:12px 0}.letterbtn{width:43px;height:43px;border:3px solid white;border-radius:15px;background:#e7dcff;font-size:1.3rem;font-weight:900;color:#624da3;cursor:pointer;box-shadow:0 3px 0 #d5c5f3}.letterbtn.active{background:#ffadd0;color:#8b2454;transform:translateY(-2px)}.letterbtn.done{background:#b6f1d8}
+.footer{text-align:center;font-size:.9rem;margin:14px;color:#7a6b9f}.small{font-size:.88rem;color:#796b9c}
+@media(max-width:580px){.hero{grid-template-columns:82px 1fr}.mascot{font-size:3.5rem}.bigletter{font-size:2.6rem}.panel{padding:10px}.btn{padding:9px 12px}}
+</style></head>
+<body>
+<header><h1>🌈 Fatima the Beautiful's Letter Adventure! 🌈</h1><p>For Beautiful Fatima! • Trace • Practice • Shine!</p><p style="color:#8b65b5;font-weight:800;margin-top:6px">Created by T. Badria Alfalahi</p></header>
+<main class="app">
+<div class="top"><span class="pill pink">⭐ Stars: <b id="stars">0</b></span><span class="pill yellow">🎯 Letter <b id="count">1</b> of 12</span><button class="btn mint" id="soundBtn" onclick="toggleSound()">🔊 Sound: ON</button></div>
+<div class="panel">
+<div class="hero"><div class="mascot" id="picture">🍎</div><div><div class="letterTitle">Let's trace this letter!</div><div class="bigletter" id="bigletter">a</div><div class="instruction" id="word">a is for apple! 🍎</div></div></div>
+<div class="lettergrid" id="lettergrid"></div>
+<div class="canvaswrap"><canvas id="board" width="1000" height="440" aria-label="Letter tracing board"></canvas></div>
+<div class="status" id="status">Start at the green dot. Follow the dotted letter!</div>
+<div class="actions"><button class="btn pink" onclick="setMode('trace')">✏️ Trace the Letter</button><button class="btn blue" onclick="setMode('write')">🖍️ My Turn to Write</button><button class="btn yellow" onclick="clearBoard()">↻ Try Again</button><button class="btn mint" onclick="nextLetter()">Next Letter ➜</button></div>
+</div>
+<div class="footer">💖 Beautiful Fatima, your little hands grow stronger with practice! Take your time and have fun. 💖<br><span class="small">Tip: Use a finger on a tablet or a mouse on a computer.</span></div>
+</main>
+<script>
+const letters=[
+['a','apple','🍎'],['t','turtle','🐢'],['s','sun','☀️'],['c','cat','🐱'],['k','kite','🪁'],['h','house','🏠'],['m','moon','🌙'],['n','nest','🪺'],['r','rabbit','🐰'],['p','pig','🐷'],['b','ball','⚽'],['d','duck','🦆']
+];
+let idx=0,stars=0,mode='trace',soundOn=true,drawing=false,last=null,completed=new Set();
+const canvas=document.getElementById('board'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+function beep(freq=660,duration=.12,type='sine'){if(!soundOn)return;try{let ac=new (window.AudioContext||window.webkitAudioContext)(),o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(.08,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+duration);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+duration);setTimeout(()=>ac.close(),300)}catch(e){}}
+function cheer(){beep(660,.12);setTimeout(()=>beep(880,.14),110);setTimeout(()=>beep(1100,.2),230)}
+function drawBoard(){
+ const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
+ // four handwriting lines (two practice rows, each with top, midline, baseline)
+ for(let row=0;row<2;row++){
+  let top=35+row*205, mid=top+68, base=top+136;
+  ctx.lineWidth=3;ctx.strokeStyle='#91d9ca';ctx.beginPath();ctx.moveTo(35,top);ctx.lineTo(w-35,top);ctx.stroke();
+  ctx.setLineDash([12,10]);ctx.strokeStyle='#f2a4c6';ctx.beginPath();ctx.moveTo(35,mid);ctx.lineTo(w-35,mid);ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle='#79b9ed';ctx.beginPath();ctx.moveTo(35,base);ctx.lineTo(w-35,base);ctx.stroke();
+  ctx.fillStyle='#9b8ab9';ctx.font='bold 16px Trebuchet MS';ctx.fillText(row===0?'TRACE':'YOUR TURN',42,top-9);
+ }
+ if(mode==='trace'){
+  ctx.save();ctx.font='bold 118px "Trebuchet MS", Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineWidth=4;ctx.strokeStyle='#d7c9fa';ctx.setLineDash([3,10]);ctx.lineCap='round';
+  ctx.strokeText(letters[idx][0],250,108);ctx.strokeText(letters[idx][0],500,108);ctx.strokeText(letters[idx][0],750,108);
+  ctx.fillStyle='#e5ddff';ctx.fillText(letters[idx][0],250,108);ctx.fillText(letters[idx][0],500,108);ctx.fillText(letters[idx][0],750,108);
+  ctx.setLineDash([]);ctx.restore();
+ }else{
+  ctx.save();ctx.font='bold 118px "Trebuchet MS", Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#f5f0ff';ctx.fillText(letters[idx][0],250,108);ctx.fillText(letters[idx][0],500,108);ctx.fillText(letters[idx][0],750,108);ctx.restore();
+ }
+ // little start dot and arrow
+ ctx.beginPath();ctx.arc(165,108,10,0,Math.PI*2);ctx.fillStyle='#64d6a9';ctx.fill();ctx.fillStyle='#3b9d7a';ctx.font='bold 18px Arial';ctx.fillText('START HERE →',95,165);
+ ctx.font='34px Arial';ctx.fillStyle='#ff9dc5';ctx.fillText('⭐',890,65);ctx.fillText('🌸',890,270);
+}
+function update(){
+ let [l,word,pic]=letters[idx];$('bigletter').textContent=l;$('word').textContent=l+' is for '+word+'! '+pic;$('picture').textContent=pic;$('count').textContent=idx+1;
+ $('lettergrid').querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('active',i===idx);b.classList.toggle('done',completed.has(i));});
+ $('status').textContent=mode==='trace'?'Start at the green dot. Follow the dotted letter!':'Your turn! Write the letter on the guide lines.';
+ drawBoard();
+}
+function initGrid(){letters.forEach((x,i)=>{let b=document.createElement('button');b.className='letterbtn';b.textContent=x[0];b.setAttribute('aria-label','Practice letter '+x[0]);b.onclick=()=>{idx=i;mode='trace';update();beep(520)};$('lettergrid').appendChild(b)})}
+function setMode(m){mode=m;update();beep(540)}
+function clearBoard(){drawBoard();$('status').textContent='Fresh page! Try again, little star!';beep(420)}
+function nextLetter(){if(!completed.has(idx)){completed.add(idx);stars+=1;$('stars').textContent=stars;cheer()}if(idx<letters.length-1){idx++;mode='trace';update()}else{$('status').textContent='🎉 Amazing! You practiced every letter! You are a Letter Star, Fatima! 🎉';cheer();idx=0;update()}}
+function toggleSound(){soundOn=!soundOn;$('soundBtn').textContent='🔊 Sound: '+(soundOn?'ON':'OFF');if(soundOn)cheer()}
+function pos(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
+function start(e){drawing=true;last=pos(e);canvas.setPointerCapture?.(e.pointerId);beep(440,.06)}
+function move(e){if(!drawing)return;let p=pos(e);ctx.strokeStyle=['#ff76ad','#7bceff','#9f8aff','#63dcb8'][Math.floor(Math.random()*4)];ctx.lineWidth=11;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p}
+function stop(){if(!drawing)return;drawing=false;beep(740,.08);$('status').textContent='Lovely writing! Keep your letters sitting on the blue line. 💗'}
+canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',stop);canvas.addEventListener('pointercancel',stop);
+initGrid();update();
+</script></body></html>
